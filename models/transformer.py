@@ -1,8 +1,8 @@
 import torch
 import numpy as np
 
-from encoder import Encoder
-from decoder import Decoder2, MaskedAttention, CrossAttention, getPositionEncoding
+from models.encoder import Encoder
+from models.decoder import Decoder2, MaskedAttention, CrossAttention, getPositionEncoding
 
 
 # todo : training loop 
