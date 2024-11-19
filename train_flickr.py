@@ -25,13 +25,13 @@ transform = torchvision.transforms.Compose(
 train_dataset = Flickr("train", num_rows=100, transform=transform)
 # Create DataLoader with the custom collate function
 train_loader = DataLoader(
-    train_dataset, batch_size=50, shuffle=True, collate_fn=Flickr.collate_fn
+    train_dataset, batch_size=64, shuffle=True, collate_fn=Flickr.collate_fn
 )
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Available device is {device}")
 
-model = Transformer(768, 256, 4, 400, 128, 256, 256, train_dataset.vocab_size)
+model = Transformer(256, 128, 4, 400, 128, 128, 64, train_dataset.vocab_size)
 
 model.to(device)
 
@@ -45,7 +45,7 @@ criterion = torch.nn.CrossEntropyLoss()
 wandb.init(project="image-captioning", name="flickr-multi-head")
 running_loss = []
 running_accuracy = []
-for _ in range(1000):
+for epoch in range(15):
     for i, (patches, tokens, target, cap_lens) in enumerate(
         tqdm(train_loader, desc="Training")
     ):
@@ -54,7 +54,7 @@ for _ in range(1000):
         target = target.to(device)
 
         optimizer.zero_grad()
-        pred = model(tokens, patches)
+        pred = model(patches, tokens)
         pred = torch.cat([x[: cap_lens[i]] for i, x in enumerate(pred)], dim=0)
 
         loss = criterion(pred.view(-1, pred.size(-1)), target.view(-1))

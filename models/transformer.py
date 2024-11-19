@@ -45,8 +45,8 @@ class Transformer(torch.nn.Module):
         #  = torch.nn.Linear(pxl_size,emb_dim)
         # encoder_output = self.linear(encoder_output)
         img_emb = self.img_embedding(pxl_input)
-        seq_len, img_embed_dim = img_emb.size(1), img_emb.size(2)
-        sin_emb = getPositionEncoding(seq_len, img_embed_dim)
+        batch_size, seq_len, img_embed_dim = img_emb.size(0), img_emb.size(1), img_emb.size(2)
+        sin_emb = getPositionEncoding(batch_size, seq_len, img_embed_dim)
         encoder_output = img_emb + sin_emb
         for i, encoder in enumerate(self.encoders):
             encoder_output = encoder(encoder_output)
@@ -55,8 +55,8 @@ class Transformer(torch.nn.Module):
         # Pass through all decoder layers
         wemb = self.word_embedding(word_inpt)
         # Positional encoding for word embeddings
-        Wseq_len, Wd = wemb.size(0), wemb.size(1)
-        Wsin_emb = getPositionEncoding(Wseq_len, Wd)
+        batch_size, Wseq_len, Wd = wemb.size(0), wemb.size(1), wemb.size(2)
+        Wsin_emb = getPositionEncoding(batch_size, Wseq_len, Wd)
         print('The Wemb after adding positional encoding:', Wsin_emb.shape)
         wemb = wemb + Wsin_emb
         print('the output of wemb after embedding',wemb.shape)

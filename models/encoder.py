@@ -2,8 +2,7 @@ from datasets import load_dataset
 import torch
 import numpy as np
 
-loaded_ds = torch.load('/Users/lydiafarnham/visual studio code/mlx5/final_model/flickr30k_patches.pt')
-
+# loaded_ds = torch.load('/Users/lydiafarnham/visual studio code/mlx5/final_model/flickr30k_patches.pt')
 
 
 # encoder no masking . decoder cross attention no masking, separate class. only masking on the text - before cross attention, another class. no need for additional classes for encoder and decoder

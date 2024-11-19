@@ -1,13 +1,14 @@
 import torch
 import numpy as np
 
-def getPositionEncoding(seq_len, d, n=10000):
-    P = np.zeros((seq_len, d))
+def getPositionEncoding(batch_size, seq_len, d, n=10000):
+    P = np.zeros((batch_size, seq_len, d))  # Adjusted to include batch size
     for k in range(seq_len):
         for i in np.arange(int(d/2)):
             denominator = np.power(n, 2*i/d)
-            P[k, 2*i] = np.sin(k / denominator)
-            P[k, 2*i+1] = np.cos(k / denominator)
+            batch_indices = np.arange(batch_size)  # Shape (batch_size,)
+            P[:, k, 2 * i] = np.sin(batch_indices / denominator)  # Broadcasting for batch size
+            P[:, k, 2 * i + 1] = np.cos(batch_indices / denominator)
     return torch.tensor(P, dtype=torch.float32)  # Convert to PyTorch tensor
 
 
@@ -122,7 +123,7 @@ class MaskedAttention(torch.nn.Module):
         seq_len = emb.size(1)
         
      
-        print("The Pemb shape:", pemb.shape) 
+    
 
         # Transform embeddings for query, key, and value
         query = self.linear_q(emb).view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
