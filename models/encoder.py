@@ -2,7 +2,9 @@ from datasets import load_dataset
 import torch
 import numpy as np
 
-# loaded_ds = torch.load('Transformer_project/flickr30k_patches.pt')
+loaded_ds = torch.load('/Users/lydiafarnham/visual studio code/mlx5/final_model/flickr30k_patches.pt')
+
+
 
 # encoder no masking . decoder cross attention no masking, separate class. only masking on the text - before cross attention, another class. no need for additional classes for encoder and decoder
 
@@ -29,6 +31,10 @@ class Encoder(torch.nn.Module):
         
         # Learnable bias for attention
         self.attn_embedding_bias = torch.nn.Parameter(torch.zeros(emb_dim))
+
+        self.linear_concat = torch.nn.Linear(emb_dim, emb_dim)
+
+        self.norm = torch.nn.LayerNorm(emb_dim)
         
         # Feedforward layer (two linear layers with ReLU in between)
         self.feedforward = torch.nn.Sequential(
@@ -38,13 +44,13 @@ class Encoder(torch.nn.Module):
         )
 
     def forward(self, emb):
-        num_patches = emb.size(0)
+        batch_size = emb.size(0)
+        num_patches = emb.size(1)
         
-        # Transform embeddings for query, key, and value, then reshape for multi-head attention
-        query = self.linear_q(emb).view(num_patches, self.num_heads, self.head_dim).transpose(0, 1)
-        print("Query shape after linear transformation:", query.shape) 
-        key = self.linear_k(emb).view(num_patches, self.num_heads, self.head_dim).transpose(0, 1)
-        value = self.linear_v(emb).view(num_patches, self.num_heads, self.head_dim).transpose(0, 1)
+        # Transform embeddings for query, key, and value
+        query = self.linear_q(emb).view(batch_size, num_patches, self.num_heads, self.head_dim).transpose(1, 2)
+        key = self.linear_k(emb).view(batch_size, num_patches, self.num_heads, self.head_dim).transpose(1, 2)
+        value = self.linear_v(emb).view(batch_size, num_patches, self.num_heads, self.head_dim).transpose(1, 2)
 
         # Calculate attention scores and apply softmax
         scaling_factor = self.head_dim ** 0.5
@@ -55,8 +61,12 @@ class Encoder(torch.nn.Module):
     
         # Apply attention weights to values and reshape back
         attention = torch.matmul(soft_matrix, value)
-        attention = attention.transpose(0, 1).contiguous()
-        attention = attention.view(num_patches, -1)  # recombine heads
+        attention = attention.transpose(1, 2).contiguous()
+        attention = attention.view(batch_size, num_patches, -1)  # recombine heads
+
+        attention = self.linear_concat(attention)
+
+        attention = self.norm(attention + emb)
 
         # Apply feedforward layer
         output = self.feedforward(attention)
@@ -72,35 +82,42 @@ if __name__ == '__main__':
     embedding_dim = 64 # Set the embedding dimension
     # embedding_layer = torch.nn.Embedding(64, embedding_dim).to(device)
 
-    args = (768, 64, 4, 4)  # Example arguments (vocab size, embedding size, num heads)
+    args = (768, 128, 4, 4)  # Example arguments (vocab size, embedding size, num heads)
     model = Encoder(*args)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     criterion = torch.nn.CrossEntropyLoss()
 
+    # Random input tensor with integer values within embedding vocab range
+    pemb = torch.rand((2,600,128)).to(device)  # Integer values for embedding lookup
 
-    for idx in range(len(loaded_ds)):
-        patches = loaded_ds[idx]['patches']  # Get the patches for the current image
-        unrolled_patches = []
+    print(pemb.shape)
+    output = model(pemb)
+    print("Output shape:", output.shape)
+
+
+    # for idx in range(len(loaded_ds)):
+    #     patches = loaded_ds[idx]['patches']  # Get the patches for the current image
+    #     unrolled_patches = []
 
         
-        # Unroll each patch into a 1D vector
-        for patch in patches:
-            if isinstance(patch, list):
-                print(patch)
-                patch = np.array(patch)  # Convert to NumPy array
+    #     # Unroll each patch into a 1D vector
+    #     for patch in patches:
+    #         if isinstance(patch, list):
+    #             print(patch)
+    #             patch = np.array(patch)  # Convert to NumPy array
 
-            # Flatten the patch and convert to a tensor
-            unrolled_patch = torch.tensor(patch.flatten(), dtype=torch.float32).to(device)
-            unrolled_patches.append(unrolled_patch)
+    #         # Flatten the patch and convert to a tensor
+    #         unrolled_patch = torch.tensor(patch.flatten(), dtype=torch.float32).to(device)
+    #         unrolled_patches.append(unrolled_patch)
 
-        # Stack the unrolled patches into a single tensor
-        unrolled_patches_tensor = torch.stack(unrolled_patches) 
-        print(unrolled_patches_tensor.shape) # Shape: [num_patches, patch_size*patch_size*channels]
+    #     # Stack the unrolled patches into a single tensor
+    #     unrolled_patches_tensor = torch.stack(unrolled_patches) 
+    #     print(unrolled_patches_tensor.shape) # Shape: [num_patches, patch_size*patch_size*channels]
 
-        output = model(unrolled_patches_tensor)  # Model output, expected shape [seq_len, vocab_size]
+    #     output = model(unrolled_patches_tensor)  # Model output, expected shape [seq_len, vocab_size]
             
-        print(f"Output shape for image {idx}: {output.shape}")
+    #     print(f"Output shape for image {idx}: {output.shape}")
 
-    # Save the model's state dict if needed
-    torch.save(model.state_dict(), 'model_overfit.pth')
+    # # Save the model's state dict if needed
+    # torch.save(model.state_dict(), 'model_overfit.pth')

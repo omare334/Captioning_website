@@ -5,7 +5,7 @@ from models.encoder import Encoder
 from models.decoder import Decoder2, MaskedAttention, CrossAttention, getPositionEncoding
 
 
-# todo : training loop 
+# todo : 
 # normalisation of layers
 # batching 
 
@@ -45,7 +45,7 @@ class Transformer(torch.nn.Module):
         #  = torch.nn.Linear(pxl_size,emb_dim)
         # encoder_output = self.linear(encoder_output)
         img_emb = self.img_embedding(pxl_input)
-        seq_len, img_embed_dim = img_emb.size(0), img_emb.size(1)
+        seq_len, img_embed_dim = img_emb.size(1), img_emb.size(2)
         sin_emb = getPositionEncoding(seq_len, img_embed_dim)
         encoder_output = img_emb + sin_emb
         for i, encoder in enumerate(self.encoders):
@@ -74,6 +74,10 @@ class Transformer(torch.nn.Module):
 # omars test
 
 if __name__ == "__main__":
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(device)
+
     # Define dimensions
     # if emb_dim chnaged you need to change Pemb_dim aswell
     pxl_size = 784
@@ -101,10 +105,15 @@ if __name__ == "__main__":
         num_decoder_layers=num_decoder_layers,
     )
 
+    # # Dummy input data before batching
+    # pxl_input = torch.rand((600, 784))  # Batch of 32 pixel inputs
+    # print(pxl_input.shape)
+    # wemb = torch.randint(0, voc_size, (32,))  # Batch of 32 word indices
+
     # Dummy input data
-    pxl_input = torch.rand((600, 784))  # Batch of 32 pixel inputs
+    pxl_input = torch.rand((2, 600, 784)).to(device)  # Batch of 32 pixel inputs
     print(pxl_input.shape)
-    wemb = torch.randint(0, voc_size, (32,))  # Batch of 32 word indices
+    wemb = torch.rand(2, 600).to(device) # Batch of 32 word indices
 
     # Forward pass
     output = model(pxl_input, wemb)
