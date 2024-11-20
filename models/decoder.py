@@ -31,8 +31,8 @@ class Decoder(torch.nn.Module):
         # Feedforward layer (two linear layers with ReLU in between)
         self.feedforward = torch.nn.Sequential(
             torch.nn.Linear(Wemb_dim, hidden_dim_ff),
-            torch.nn.ReLU(),
-            torch.nn.Linear(hidden_dim_ff, Wemb_dim)
+            torch.nn.GELU(),
+            torch.nn.Linear(hidden_dim_ff, Wemb_dim),
         )
 
     def forward(self, wemb, pemb):
