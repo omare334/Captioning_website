@@ -1,0 +1,13 @@
+streamlit==1.39.0
+requests==2.31.0
+pydantic==2.9.2
+matplotlib==3.8.2
+pydantic-settings
+python-dotenv
+torch
+nltk
+gensim
+pytest
+pandas
+psycopg2-binary==2.9.9
+sqlalchemy==2.0.23

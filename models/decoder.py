@@ -11,7 +11,7 @@ def getPositionEncoding(batch_size, seq_len, d, n=10000):
             P[:, k, 2 * i + 1] = np.cos(batch_indices / denominator)
     return torch.tensor(P, dtype=torch.float32)  # Convert to PyTorch tensor
 
-
+# old decoder
 class Decoder(torch.nn.Module):
     def __init__(self, Wemb_dim, Pemb_dim, new_dim, num_heads, hidden_dim_ff, voc_size):
         super().__init__()
@@ -122,9 +122,6 @@ class MaskedAttention(torch.nn.Module):
         batch_size = emb.size(0)
         seq_len = emb.size(1)
         
-     
-    
-
         # Transform embeddings for query, key, and value
         query = self.linear_q(emb).view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
         key = self.linear_k(emb).view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
