@@ -9,7 +9,6 @@ from tqdm import tqdm
 import os
 import pickle
 import sentencepiece as spm
-from transformers import GPT2Tokenizer
 
 path_to_split_ind = Path(__file__).parent.parent / "data/split_to_indices.pkl"
 path_to_tokeniser = Path(__file__).parent.parent / "final_model/tokenizer.model"
@@ -22,16 +21,8 @@ class Flickr(torch.utils.data.Dataset):
         super().__init__()
         self.window_size = window_size
         self.ds = load_dataset("nlphuji/flickr30k")
-        self.tokeniser = GPT2Tokenizer.from_pretrained("gpt2")
-        # Add special tokens
-        self.tokeniser.add_special_tokens({
-            "bos_token": "<|startoftext|>",  # Define a custom BOS token
-            "eos_token": "<|endoftext|>",    # GPT-2 already has this token
-            "pad_token": "<|pad|>"           # Optional: Add padding token
-        })
-        self.vocab_size = self.tokeniser.vocab_size
-        print(self.vocab_size)
-
+        self.tokeniser = spm.SentencePieceProcessor(model_file=str(path_to_tokeniser))
+        self.vocab_size = self.tokeniser.get_piece_size()
         self.split = split
         if os.path.exists(path_to_split_ind):
             with open(path_to_split_ind, "rb") as f:
@@ -86,11 +77,10 @@ class Flickr(torch.utils.data.Dataset):
 
     def encode_label(self, label):
         return torch.LongTensor(
-            [self.tokeniser.bos_token_id]  # BOS token as ID (integer)
-            + self.tokeniser.encode(label)  # Encoded label as list of integers
-            + [self.tokeniser.eos_token_id]  # EOS token as ID (integer)
+            [self.tokeniser.bos_id()]
+            + self.tokeniser.encode(label)
+            + [self.tokeniser.eos_id()]
         )
-
 
     def get_patches(self, img: torch.Tensor):
         img = img.unsqueeze(0)

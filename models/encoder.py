@@ -38,8 +38,8 @@ class Encoder(torch.nn.Module):
         # Feedforward layer (two linear layers with ReLU in between)
         self.feedforward = torch.nn.Sequential(
             torch.nn.Linear(emb_dim, hidden_dim_ff),
-            torch.nn.ReLU(),
-            torch.nn.Linear(hidden_dim_ff, emb_dim)
+            torch.nn.GELU(),
+            torch.nn.Linear(hidden_dim_ff, emb_dim),
         )
 
     def forward(self, emb):
