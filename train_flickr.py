@@ -5,12 +5,13 @@ from tqdm import tqdm
 from torch.utils.data import DataLoader, random_split
 import torch
 import torchvision
+from transformers import GPT2Model, GPT2Config
 
 repo_dir = Path(__file__).parent.parent
 sys.path.append(str(repo_dir))
 
 from data.data_loader import Flickr
-from models.transformer import Transformer
+from models.transformer_gpt import Transformer
 
 transform = torchvision.transforms.Compose(
     [
@@ -31,6 +32,7 @@ train_loader = DataLoader(
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Available device is {device}")
 
+#'pxl_size', 'emb_dim', 'num_heads', 'hidden_dim_ff', 'Wemb_dim', 'Pemb_dim', 'new_dim', and 'voc_size'
 model = Transformer(256, 128, 4, 400, 128, 128, 64, 50300)
 
 model.to(device)

@@ -20,86 +20,40 @@ def getPositionEncoding(batch_size, seq_len, d, n=10000):
 
     
 class Decoder2(torch.nn.Module):
-    def __init__(self, vocab_size, Wemb_dim, Pemb_dim, new_dim, num_heads, hidden_dim_ff):
+    def __init__(self, config, cross_attention_layers, num_blocks=10):
         super().__init__()
-        self.masked_attn = MaskedAttention(Wemb_dim, num_heads, hidden_dim_ff)
-        self.cross_attn = CrossAttention(Wemb_dim, Pemb_dim, new_dim, num_heads, hidden_dim_ff, vocab_size)
-        self.ff = torch.nn.Sequential(
-            torch.nn.Linear(Wemb_dim, hidden_dim_ff),
-            torch.nn.ReLU(),
-            torch.nn.Linear(hidden_dim_ff, Wemb_dim)
-        )
+        self.gpt2 = GPT2Model(config)  # GPT2 model with all layers
+        self.cross_attention_layers = cross_attention_layers  # List of cross-attention layers
+        self.num_blocks = num_blocks  # Total number of blocks to use
+
+    def forward(self, input_ids, attention_mask=None, image_embeddings=None):
+        # Pass input through GPT-2's embedding layer (this applies token embedding)
+        gpt2_outputs = self.gpt2(input_ids, attention_mask=attention_mask)
+        
+        # Extract the word embeddings (last hidden state)
+        word_embeddings = gpt2_outputs.last_hidden_state  # Make sure you're using the right attribute
+        
+        # Process through alternating GPT-2 block and cross-attention layers
+        for i in range(self.num_blocks):
+            # Step 1: Apply GPT-2 attention block
+            gpt2_block_output = self.gpt2.h[i](word_embeddings, attention_mask=attention_mask)
+            word_embeddings = gpt2_block_output[0]  # Extract the last_hidden_state from the tuple
+            
+            # Print to show that we have gone through one GPT-2 block
+            print(f"Passed through GPT-2 block {i + 1}, word embeddings shape: {word_embeddings.shape}")
+            
+            # Step 2: If image embeddings are provided, apply a different cross-attention for each block
+            if image_embeddings is not None:
+                # Use a different cross-attention layer for each block
+                cross_attention_layer = self.cross_attention_layers[i]
+                word_embeddings = cross_attention_layer(word_embeddings, image_embeddings)
+                
+                # Print to show that we have gone through cross-attention layer
+                print(f"Passed through cross-attention after GPT-2 block {i + 1}, word embeddings shape: {word_embeddings.shape}")
+        
+        return word_embeddings
+
     
-    def forward(self, wemb, pemb):
-
-        # No positional encoding needed for image embeddings (Pemb)
-        print("The Pemb shape:", pemb.shape) 
-
-        word_emb = self.masked_attn(wemb)
-        cross_emb = self.cross_attn(word_emb, pemb)
-
-        out = self.ff(cross_emb)
-        # add & normalize
-        return out
-    
-class MaskedAttention(torch.nn.Module):
-    def __init__(self, emb_dim, num_heads, hidden_dim_ff):
-        super().__init__()
-        self.num_heads = num_heads
-        self.head_dim = emb_dim // num_heads  # Dimension per head
-        # print(self.head_dim)
-        assert emb_dim % num_heads == 0, "Embedding dimension must be divisible by the number of heads"
-        
-        self.linear_q = torch.nn.Linear(emb_dim, emb_dim)
-        self.linear_k = torch.nn.Linear(emb_dim, emb_dim)
-        self.linear_v = torch.nn.Linear(emb_dim, emb_dim)
-        
-        self.linear_concat = torch.nn.Linear(emb_dim, emb_dim)
-
-        self.norm = torch.nn.LayerNorm(emb_dim)
-        # Learnable bias for attention
-        # self.attn_embedding_bias = torch.nn.Parameter(torch.zeros(emb_dim))
-        
-
-    def forward(self, emb):
-
-        # Fix: Get dimensions correctly using size()
-        # seq_len, embed_dim
-        batch_size = emb.size(0)
-        seq_len = emb.size(1)
-        
-     
-    
-
-        # Transform embeddings for query, key, and value
-        query = self.linear_q(emb).view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-        key = self.linear_k(emb).view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-        value = self.linear_v(emb).view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
-
-        # Calculate attention scores and apply softmax
-        scaling_factor = self.head_dim ** 0.5
-        similarity_matrix = torch.matmul(query, key.transpose(-2, -1)) / scaling_factor
-
-        # Apply upper triangular mask (if required for causality)
-        mask = torch.triu(torch.ones_like(similarity_matrix), diagonal=1) * -1e9
-        similarity_matrix = similarity_matrix + mask 
-
-        # Apply softmax to get attention weights
-        soft_matrix = torch.softmax(similarity_matrix, dim=-1)
-    
-        # Apply attention weights to values and reshape back
-        attention = torch.matmul(soft_matrix, value)
-        attention = attention.transpose(1, 2).contiguous()
-        attn_emb = attention.view(batch_size,seq_len, -1)  # Reshape
-
-        attn_emb = self.linear_concat(attn_emb)
-
-        attn_emb = self.norm(attn_emb + emb)
-
-        # add residual and normalisation
-        
-        return attn_emb
-
 class CrossAttention(torch.nn.Module):
     def __init__(self, Wemb_dim, Pemb_dim, new_dim, num_heads, hidden_dim_ff, voc_size):
         super().__init__()
