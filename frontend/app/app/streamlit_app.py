@@ -1,5 +1,8 @@
 import streamlit as st
 import requests
+from PIL import Image
+import io
+
 import pandas as pd
 from search_logger import SearchLogger
 
