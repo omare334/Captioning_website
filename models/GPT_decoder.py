@@ -2,15 +2,11 @@ import torch
 import numpy as np
 from transformers import GPT2Tokenizer
 
-GPT_CONFIG_124M = {
-    "vocab_size": 50300,    # Vocabulary size
-    "context_length": 1024, # Context length
-    "emb_dim": 768,         # Embedding dimension
-    "n_heads": 12,          # Number of attention heads
-    "n_layers": 12,         # Number of layers
-    "drop_rate": 0.1,       # Dropout rate
-    "qkv_bias": False       # Query-Key-Value bias
-}
+
+from transformers import GPT2Config, GPT2Model
+
+
+
 
 def getPositionEncoding(batch_size, seq_len, d, n=10000):
     P = np.zeros((batch_size, seq_len, d))  # Adjusted to include batch size
@@ -21,7 +17,6 @@ def getPositionEncoding(batch_size, seq_len, d, n=10000):
             P[:, k, 2 * i] = np.sin(batch_indices / denominator)  # Broadcasting for batch size
             P[:, k, 2 * i + 1] = np.cos(batch_indices / denominator)
     return torch.tensor(P, dtype=torch.float32)  # Convert to PyTorch tensor
-
 
     
 class Decoder2(torch.nn.Module):
