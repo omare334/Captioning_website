@@ -2,7 +2,7 @@ import torch
 import numpy as np
 
 from models.encoder import Encoder
-from models.decoder import Decoder2, MaskedAttention, CrossAttention, getPositionEncoding
+from models.GPT_decoder import Decoder2, CrossAttention, getPositionEncoding
 from transformers import GPT2Model, GPT2Config
 
 custom_config = GPT2Config(
