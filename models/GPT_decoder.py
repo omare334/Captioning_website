@@ -2,15 +2,11 @@ import torch
 import numpy as np
 from transformers import GPT2Tokenizer
 
-GPT_CONFIG_124M = {
-    "vocab_size": 50300,    # Vocabulary size
-    "context_length": 1024, # Context length
-    "emb_dim": 768,         # Embedding dimension
-    "n_heads": 12,          # Number of attention heads
-    "n_layers": 12,         # Number of layers
-    "drop_rate": 0.1,       # Dropout rate
-    "qkv_bias": False       # Query-Key-Value bias
-}
+
+from transformers import GPT2Config, GPT2Model
+
+
+
 
 def getPositionEncoding(batch_size, seq_len, d, n=10000):
     P = np.zeros((batch_size, seq_len, d))  # Adjusted to include batch size
@@ -72,6 +68,9 @@ class MaskedAttention(torch.nn.Module):
         batch_size = emb.size(0)
         seq_len = emb.size(1)
         
+     
+    
+
         # Transform embeddings for query, key, and value
         query = self.linear_q(emb).view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
         key = self.linear_k(emb).view(batch_size, seq_len, self.num_heads, self.head_dim).transpose(1, 2)
