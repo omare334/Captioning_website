@@ -31,7 +31,7 @@ train_loader = DataLoader(
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Available device is {device}")
 
-model = Transformer(256, 128, 4, 400, 128, 128, 64, 50300)
+model = Transformer(256, 128, 8, 400, 128, 128, 64, 50300,12,12)
 
 model.to(device)
 
@@ -45,7 +45,7 @@ criterion = torch.nn.CrossEntropyLoss()
 wandb.init(project="image-captioning", name="flickr-multi-head_GELU_100")
 running_loss = []
 running_accuracy = []
-for epoch in range(1):
+for epoch in range(1000):
     for i, (patches, tokens, target, cap_lens) in enumerate(
         tqdm(train_loader, desc="Training")
     ):

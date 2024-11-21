@@ -30,7 +30,7 @@ class Decoder2(torch.nn.Module):
         self.cross_attn = CrossAttention(Wemb_dim, Pemb_dim, new_dim, num_heads, hidden_dim_ff, vocab_size)
         self.ff = torch.nn.Sequential(
             torch.nn.Linear(Wemb_dim, hidden_dim_ff),
-            torch.nn.ReLU(),
+            torch.nn.GELU(),
             torch.nn.Linear(hidden_dim_ff, Wemb_dim)
         )
     
