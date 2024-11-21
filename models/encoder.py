@@ -19,6 +19,7 @@ def getPositionEncoding(seq_len, d, n=10000):
 class Encoder(torch.nn.Module):
     def __init__(self, pxl_size, emb_dim, num_heads, hidden_dim_ff):
         super().__init__()
+        emb_dim = 756
         self.num_heads = num_heads
         self.head_dim = emb_dim // num_heads  # Dimension per head
         # print(self.head_dim)

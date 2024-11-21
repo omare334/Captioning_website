@@ -5,12 +5,14 @@ from tqdm import tqdm
 from torch.utils.data import DataLoader, random_split
 import torch
 import torchvision
+from models.encoder import Encoder
+from models.gpt_decoder_new import CrossAttention,Transformer
+from transformers import GPT2Config
 
 repo_dir = Path(__file__).parent.parent
 sys.path.append(str(repo_dir))
 
 from data.data_loader import Flickr
-from models.transformer import Transformer
 
 transform = torchvision.transforms.Compose(
     [
@@ -31,7 +33,28 @@ train_loader = DataLoader(
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Available device is {device}")
 
-model = Transformer(256, 128, 4, 400, 128, 128, 64, 50300)
+custom_config = GPT2Config(
+    vocab_size=50257,
+    n_positions=1024,
+    n_ctx=1024,
+    n_embd=768,
+    n_head=12,
+    n_layer=12,
+    resid_pdrop=0.1,
+    attn_pdrop=0.1,
+    embd_pdrop=0.1,
+    use_cache=True
+)
+
+num_blocks = 10
+encoder_layers = [Encoder(756, 756, 4, 4) for _ in range(num_blocks)]
+cross_attention_layers = [
+    CrossAttention(Wemb_dim=756, Pemb_dim=756, new_dim=128, num_heads=4, hidden_dim_ff=64, voc_size=50257)
+    for _ in range(num_blocks)
+]
+
+#'pxl_size', 'emb_dim', 'num_heads', 'hidden_dim_ff', 'Wemb_dim', 'Pemb_dim', 'new_dim', and 'voc_size'
+model = Transformer(custom_config, cross_attention_layers, encoder_layers, num_blocks)
 
 model.to(device)
 
@@ -56,7 +79,7 @@ for epoch in range(1):
         target = target.to(device)
 
         optimizer.zero_grad()
-        pred = model(patches, tokens)
+        pred = model(tokens,None, patches)
         pred = torch.cat([x[: cap_lens[i]] for i, x in enumerate(pred)], dim=0)
 
         loss = criterion(pred.view(-1, pred.size(-1)), target.view(-1))

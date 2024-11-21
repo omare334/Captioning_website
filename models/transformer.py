@@ -54,7 +54,6 @@ class Transformer(torch.nn.Module):
 
         # Pass through all decoder layers
         wemb = self.word_embedding(word_inpt)
-        wemb = self.word_embedding(word_inpt)
         # Positional encoding for word embeddings
         batch_size, Wseq_len, Wd = wemb.size(0), wemb.size(1), wemb.size(2)
         Wsin_emb = getPositionEncoding(batch_size, Wseq_len, Wd)

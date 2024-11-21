@@ -1,12 +1,10 @@
 import torch
 import numpy as np
 from transformers import GPT2Tokenizer
-
+import torch as nn
+import torch.nn as nn  # Import nn as alias for nn.Module
 
 from transformers import GPT2Config, GPT2Model
-
-
-
 
 def getPositionEncoding(batch_size, seq_len, d, n=10000):
     P = np.zeros((batch_size, seq_len, d))  # Adjusted to include batch size
@@ -18,15 +16,15 @@ def getPositionEncoding(batch_size, seq_len, d, n=10000):
             P[:, k, 2 * i + 1] = np.cos(batch_indices / denominator)
     return torch.tensor(P, dtype=torch.float32)  # Convert to PyTorch tensor
 
-    
-class Decoder2(torch.nn.Module):
+   
+class Decoder2(nn.Module):
     def __init__(self, config, cross_attention_layers, num_blocks=10):
         super().__init__()
         self.gpt2 = GPT2Model(config)  # GPT2 model with all layers
         self.cross_attention_layers = cross_attention_layers  # List of cross-attention layers
         self.num_blocks = num_blocks  # Total number of blocks to use
 
-    def forward(self, input_ids, attention_mask=None, image_embeddings=None):
+    def forward(self, input_ids, image_embeddings, attention_mask=None):
         # Pass input through GPT-2's embedding layer (this applies token embedding)
         gpt2_outputs = self.gpt2(input_ids, attention_mask=attention_mask)
         
@@ -119,28 +117,50 @@ class CrossAttention(torch.nn.Module):
 
         return final_emb
 
-
-#%%
 if __name__ == "__main__":
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(device)
+    print(f"Device: {device}")
 
+    # Test parameters
+    vocab_size = 6000  # Vocabulary size
+    Wemb_dim = 64  # Word embedding dimension
+    Pemb_dim = 128  # Positional embedding dimension
+    new_dim = 128  # Projection dimension
+    num_heads = 4  # Number of attention heads
+    hidden_dim_ff = 256  # Hidden dimension for feed-forward
+    num_blocks = 3  # Number of blocks (cross-attention + GPT layers)
 
-    # Testing
-    args = (4000, 64,128, 128, 4,6000)  # (vocab size, embedding size, num heads, FFN hidden dim)
-    # self, vocabsize, Wemb_dim, Pemb_dim, new_dim, num_heads, hidden_dim_ff, voc_size)
-    model = Decoder2(*args)
+    # Initialize cross-attention layers
+    cross_attention_layers = [
+        CrossAttention(Wemb_dim, Pemb_dim, new_dim, num_heads, hidden_dim_ff, vocab_size).to(device)
+        for _ in range(num_blocks)
+    ]
 
+    # Create GPT-2 configuration
+    config = GPT2Config(vocab_size=vocab_size, n_embd=Wemb_dim, n_layer=num_blocks, n_head=num_heads)
+
+    # Initialize the Decoder2 model
+    model = Decoder2(config, cross_attention_layers, num_blocks=num_blocks).to(device)
+
+    # Optimizer and criterion
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     criterion = torch.nn.CrossEntropyLoss()
 
-    # Random input tensor with integer values within embedding vocab range
+    # Random input tensors
+    batch_size = 2
+    seq_len_w = 10  # Word sequence length
+    seq_len_p = 600  # Positional sequence length
+
     pemb = torch.rand((2,600,128)).to(device)  # Integer values for embedding lookup
     wemb = torch.rand(2,10, 64).to(device)
 
+    # Attention mask (optional)
+    attention_mask = torch.ones(batch_size, seq_len_w).to(device)
 
-    print(pemb.shape)
-    print(wemb.shape)
-    output = model(wemb,pemb)
-    print("Output shape:", output.shape)
+    # Forward pass
+    try:
+        output = model(wemb, pemb,attention_mask)
+        print(f"Output shape: {output.shape}")
+    except Exception as e:
+        print(f"Error during forward pass: {e}")
