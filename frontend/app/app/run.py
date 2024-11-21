@@ -9,7 +9,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "app.main:app",
         host="127.0.0.1",  # Changed from 0.0.0.0 to localhost
-        port=8051,
+        port=8052,
         reload=True,
         workers=1,  # Explicitly set number of workers
     )

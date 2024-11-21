@@ -60,8 +60,9 @@ if uploaded_file is not None:
             image.save(img_bytes, format='PNG')
             img_bytes = img_bytes.getvalue()
 
+            # fix
             # Send the image to your model's API for captioning
-            response = requests.post("http://backend:8051/caption", files={"image": img_bytes})
+            response = requests.post("http://backend:8052/caption", files={"image": img_bytes})
 
             if response.status_code == 200:
                 # Display the generated caption

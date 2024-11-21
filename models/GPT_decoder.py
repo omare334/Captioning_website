@@ -6,6 +6,13 @@ import torch.nn as nn  # Import nn as alias for nn.Module
 
 from transformers import GPT2Config, GPT2Model
 
+<<<<<<< Updated upstream
+=======
+from gpt_decoder_new import CrossAttentionGPT2
+
+
+
+>>>>>>> Stashed changes
 def getPositionEncoding(batch_size, seq_len, d, n=10000):
     P = np.zeros((batch_size, seq_len, d))  # Adjusted to include batch size
     for k in range(seq_len):
@@ -16,6 +23,7 @@ def getPositionEncoding(batch_size, seq_len, d, n=10000):
             P[:, k, 2 * i + 1] = np.cos(batch_indices / denominator)
     return torch.tensor(P, dtype=torch.float32)  # Convert to PyTorch tensor
 
+<<<<<<< Updated upstream
    
 class Decoder2(nn.Module):
     def __init__(self, config, cross_attention_layers, num_blocks=10):
@@ -51,6 +59,34 @@ class Decoder2(nn.Module):
         
         return word_embeddings
 
+=======
+
+# Create the custom GPT2 model
+custom_config = GPT2Config(
+    vocab_size=50300,
+    n_positions=1024,
+    n_ctx=1024,
+    n_embd=768,
+    n_head=12,
+    n_layer=12,
+    resid_pdrop=0.1,
+    attn_pdrop=0.1,
+    embd_pdrop=0.1,
+    use_cache=True
+)
+
+    
+class Decoder2(torch.nn.Module):
+    def __init__(self, vocab_size, Wemb_dim, Pemb_dim, new_dim, num_heads, hidden_dim_ff):
+        super().__init__()
+        self.masked_attn = MaskedAttention(Wemb_dim, num_heads, hidden_dim_ff)
+        self.cross_attn = CrossAttentionGPT2(Wemb_dim, Pemb_dim, new_dim, num_heads, hidden_dim_ff, vocab_size)
+        self.ff = torch.nn.Sequential(
+            torch.nn.Linear(Wemb_dim, hidden_dim_ff),
+            torch.nn.ReLU(),
+            torch.nn.Linear(hidden_dim_ff, Wemb_dim)
+        )
+>>>>>>> Stashed changes
     
 class CrossAttention(torch.nn.Module):
     def __init__(self, Wemb_dim, Pemb_dim, new_dim, num_heads, hidden_dim_ff, voc_size):
