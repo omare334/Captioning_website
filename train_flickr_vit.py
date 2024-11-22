@@ -9,8 +9,8 @@ import torchvision
 repo_dir = Path(__file__).parent.parent
 sys.path.append(str(repo_dir))
 
-from data.data_loader import Flickr
-from models.transformer import Transformer
+from data.data_loader_vit import Flickr
+from models.transformer_vit import Transformer
 
 transform = torchvision.transforms.Compose(
     [
@@ -31,7 +31,7 @@ train_loader = DataLoader(
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Available device is {device}")
 
-model = Transformer(256, 128, 8, 400, 128, 128, 64, 50300,12,12)
+model = Transformer(224, 128, 8, 400, 128, 768, 128, 50300,12,12)
 
 model.to(device)
 
