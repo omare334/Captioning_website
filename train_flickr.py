@@ -81,18 +81,14 @@ try:
             accuracy = correct / total * 100
             running_accuracy.append(accuracy)
 
-            # Log metrics to W&B
-            wandb.log(
-                {
-                    "loss-100": sum(running_loss) / 100,
-                    "accuracy-100": sum(running_accuracy) / 100,
-                }
-            )
-            running_loss = []
-            running_accuracy = []
-except KeyboardInterrupt:
-    print("\nTraining interrupted. Saving model...")
-finally:
-    # Save the model at the end or when interrupted
-    torch.save(model.state_dict(), model_save_path)
-    print(f"Model saved to {model_save_path}")
+        # print("", end="\r")
+        # print(f"loss: {sum(running_loss) / 100}", end="\r")
+        # if (i+1) % 100 == 0:
+        wandb.log(
+            {
+                "loss-100": sum(running_loss) / 100,
+                "accuracy-100": sum(running_accuracy) / 100,
+            }
+        )
+        running_loss = []
+        running_accuracy = []

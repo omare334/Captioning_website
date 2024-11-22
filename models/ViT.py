@@ -23,12 +23,12 @@ class ViT(torch.nn.Module):
         return self.h
 
 
-l = ViT()
-img = PIL.Image.open("./image.png").convert("RGB")
-img = l.p(img).unsqueeze(0)
-h, prd = l(img)
-print("Shapes:", h.shape, prd.shape)
+# l = ViT()
+# img = PIL.Image.open("./image.png").convert("RGB")
+# img = l.p(img).unsqueeze(0)
+# h, prd = l(img)
+# print("Shapes:", h.shape, prd.shape)
 
-_, idx = prd.max(dim=1)
-name = l.w.meta["categories"][idx.item()]
-print("Name:", name)
+# _, idx = prd.max(dim=1)
+# name = l.w.meta["categories"][idx.item()]
+# print("Name:", name)
